@@ -1,0 +1,82 @@
+'   This VBA module contains 3 functions
+'   isDup               : comparing two strings' similarity
+'   sentimentCalc       : calculating sentiment value by checking words
+'   sentimentCategory   : determine category by sentiment value
+'   
+'   @author MingCong Zhou
+'   @date   March 11th, 2020
+
+Function isDup(tweet1 As String, tweet2 As String, threshold As Double) As Boolean
+    
+    ' Variable Declaration
+    Dim count As Integer
+    Dim result As Double
+    Dim tw1_array() As String
+    Dim tw2_array() As String
+    
+    ' Split tweet in to array by " " (default is space)
+    tw1_array = Split(tweet1)
+    tw2_array = Split(tweet2)
+
+    'Using nested loop to check is element from tw1_array is in tw2_array or not
+    For i = LBound(tw1_array) To UBound(tw1_array)
+        For j = LBound(tw2_array) To UBound(tw2_array)
+            
+            ' Convert element into lower case and compare. If they equal counter + 1.
+            If StrComp(LCase(tw1_array(i)), LCase(tw2_array(j)), vbTextCompare) = 0 Then
+                count = count + 1
+
+                ' Replace tw2_array's j element. avoiding repeated checking
+                tw2_array(j) = "replace_text_avoid_repeat"
+            End If
+
+        Next j
+    Next i
+
+    ' Calculate and compare the result
+    result = count / (UBound(tw1_array) - LBound(tw1_array) + 1)
+    If result > threshold Then
+        isDup = True
+    Else
+         isDup = False
+    End If
+End Function
+
+Function sentimentCalc(tweet As String) As Integer
+    ' Variable Declaration
+    Dim sentiment_value As Integer
+    Dim positive As Range
+    Dim negative As Range
+
+    ' Get the ranges from the keywords Sheet use Worksheet
+    Set positive = Worksheets("keywords").Range("A2:A54")
+    Set negative = Worksheets("keywords").Range("B2:B54")
+
+    ' Replace multiple character with nested replace function
+    clean_tw_arr = Split(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(tweet, "!", ""), ".", ""), ",", ""), "?", ""), ":", ""), ")", ""), "(", ""), ";", ""), "*", ""))
+
+    ' Using nested for loop to add/sub final value
+    For i = LBound(clean_tw_arr) To UBound(clean_tw_arr)
+        For Each pos In positive
+            If StrComp(LCase(clean_tw_arr(i)), LCase(pos), vbTextCompare) = 0 Then
+                sentiment_value = sentiment_value + 10
+            End If
+        Next
+        For Each neg In negative
+            If StrComp(LCase(clean_tw_arr(i)), LCase(neg), vbTextCompare) = 0 Then
+                sentiment_value = sentiment_value - 10
+            End If
+        Next
+    Next i
+    sentimentCalc = sentiment_value
+End Function
+
+Function sentimentCategory(sentVal As Integer) As String
+    If sentVal > 0 Then
+        sentimentCategory = "Positive"
+    ElseIf sentVal = 0 Then
+        sentimentCategory = "Neutral"
+    Else
+        sentimentCategory = "Negative"
+    End If
+End Function
